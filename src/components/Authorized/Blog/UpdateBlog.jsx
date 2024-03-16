@@ -1,34 +1,65 @@
-import React,{useEffect,useState} from 'react';
+import React,{useEffect,useState,useRef} from 'react';
 import {useParams} from 'react-router-dom';
 import {useSelector,useDispatch} from 'react-redux';
 import {toast} from 'react-toastify';
-import BoxShadowLoader from '../../../components/Skeletons/BoxShadowLoader';
+import BoxShadowLoader from '../../Skeletons/BoxShadowLoader';
 
 import {Box, Typography,TextField, Button,Grid,FormControl,InputLabel,Select,MenuItem} from '@mui/material';
 import UpdateIcon from '@mui/icons-material/Update';
-import { categoryDetails, resetMutationResult, selectCategoryDetails, selectCategoryMutationResult, updateCategory,selectAllCategories } from '../../../redux/features/categorySlice';
+import {getBlogs,blogDetails,selectBlogDetails,updateBlog, resetMutationResult, selectAllBlogAuthorizeRole, selectBlogMutationResult} from '../../../redux/features/blogSlice';
+
 import { IMAGE_BASEURL } from '../../../constants/baseURL';
 import PhotoIcon from '@mui/icons-material/Photo';
-const UpdateCategory = () => {
+import JoditEditor from 'jodit-react';
+
+const UpdateBlog = () => {
     const {id}=useParams();
     const dispatch=useDispatch();
-
     const [title,setTitle]=useState('');
     const [description,setDescription]=useState('');
-    const [categoryStatus,setCategoryStatus]=useState('');
-
+    const [blogStatus,setBlogStatus]=useState('');
     const [Image,setImage]=useState('');
-    const [CategoryImg,setCategoryImg]=useState('');
+    const [BlogImg,setBlogImg]=useState('');
     const [file,setFile]=useState('');
+    const editor = useRef(null);
+    const config = {
+      zIndex: 0,
+      readonly: false,
+      activeButtonsInReadOnly: ['source', 'fullsize', 'print', 'about'],
+      toolbarButtonSize: 'middle',
+      theme: 'default',
+      enableDragAndDropFileToEditor: true,
+      saveModeInCookie: false,
+      spellcheck: true,
+      editorCssClass: false,
+      triggerChangeEvent: true,
+      height: 500,
+      direction: 'ltr',
+      language: 'en',
+      debugLanguage: false,
+      i18n: 'en',
+      tabIndex: -1,
+      toolbar: true,
+      enter: 'P',
+      useSplitMode: false,
+      colorPickerDefaultTab: 'background',
+      imageDefaultWidth: 100,
+      disablePlugins: ['paste', 'stat'],
+      events: {},
+      textIcons: false,
+      uploader: {
+        insertImageAsBase64URI: true
+      },
+      placeholder: '',
+      showXPathInStatusbar: false
+    };
 
-
-
-    const {loading, category}=useSelector(selectCategoryDetails);
-    const {loading:isUdating, success}=useSelector(selectCategoryMutationResult);
-    const {categories}=useSelector(selectAllCategories);
+    const {loading, blog}=useSelector(selectBlogDetails);
+    const {loading:isUdating, success}=useSelector(selectBlogMutationResult);
+    const {blogs}=useSelector(selectAllBlogAuthorizeRole);
 
     const imageHandler=(e)=>{
-      if(e.target.name==='logo'){
+      if(e.target.name==='BlogImg'){
         setFile(e.target.files);
         const reader=new FileReader();
         reader.onload=()=>{
@@ -45,32 +76,32 @@ const UpdateCategory = () => {
         const jsonData=new FormData();
         jsonData.append('title',title);
         jsonData.append('description',description);
-        jsonData.append('categoryStatus',categoryStatus);
+        jsonData.append('blogStatus',blogStatus);
 
         if(file!==''){
           Object.keys(file).forEach(key=>{
             jsonData.append(file.item(key).name,file.item(key));
           })
         }
-        dispatch(updateCategory({id,jsonData,toast}));
+        dispatch(updateBlog({id,jsonData,toast}));
     }
 
     useEffect(() => {
         if(success){
             dispatch(resetMutationResult());
         }
-        dispatch(categoryDetails({id,toast}));
+        dispatch(blogDetails({id,toast}));
     }, [dispatch,id,success]);
 
     useEffect(() => {
-        if(category)
+        if(blog)
         {
-            setTitle(category.title);
-            setDescription(category.description);
-            setCategoryImg(category?.CategoryImg?.url)
-            setCategoryStatus(category.categoryStatus);
+            setTitle(blog.title);
+            setDescription(blog.description);
+            setBlogImg(blog?.ImageURL?.url)
+            setBlogStatus(blog.blogStatus);
         }
-      }, [category]);
+      }, [blog]);
       
     
   return (
@@ -91,22 +122,18 @@ const UpdateCategory = () => {
                         value={title}
                         onChange={(e=>setTitle(e.target.value))}
             />
-            <TextField type='text'
-                        id='description'
-                        label='Description'
-                        name='description'
-                        margin='normal'
-                        required
-                        fullWidth
-                        autoFocus
-                        value={description}
-                        onChange={(e=>setDescription(e.target.value))}
-            />
+            
+            <JoditEditor
+            ref={editor}
+            value={description}
+            config={config}
+            onChange={(newText)=>setDescription(newText)}
+          />
              <Grid container style={{alignItems:'center',margin:'10px 0'}}>
                 <Grid item xs>
                   <Box >
                     {Image===''? 
-                      <img src={IMAGE_BASEURL+CategoryImg} style={{height:'80px',width:'80px', borderRadius:'50%'}}/>
+                      <img src={IMAGE_BASEURL+BlogImg} style={{height:'80px',width:'80px', borderRadius:'50%'}}/>
                       :
                       <img src={Image} style={{height:'80px',width:'80px', borderRadius:'50%'}}/>
                     }
@@ -120,7 +147,7 @@ const UpdateCategory = () => {
                   >
                     <input type='file' 
                             hidden
-                            name='logo'
+                            name='BlogImg'
                             onChange={imageHandler}
                     />
                     Change Image
@@ -133,9 +160,10 @@ const UpdateCategory = () => {
                     <Select required
                             labelId='status'
                             id='status'
-                            value={categoryStatus}
+                            value={blogStatus}
                             label='status'
-                            onChange={(e=>setCategoryStatus(e.target.value))}> 
+                            onChange={(e=>setBlogStatus(e.target.value))}>
+
                                 <MenuItem value='pause'>Pause</MenuItem>
                                 <MenuItem value='active'>Active</MenuItem>
                     </Select>
@@ -155,4 +183,4 @@ const UpdateCategory = () => {
   )
 }
 
-export default UpdateCategory
+export default UpdateBlog

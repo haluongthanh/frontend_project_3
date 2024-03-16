@@ -1,4 +1,4 @@
-import React,{useState,useEffect} from 'react'
+import React,{useState,useEffect,useRef} from 'react'
 import {useDispatch,useSelector} from 'react-redux';
 import {toast} from 'react-toastify';
 
@@ -6,24 +6,54 @@ import {Box, Typography, TextField, Button, TextareaAutosize, Grid,  MenuItem, F
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import InsertPhotoRoundedIcon from '@mui/icons-material/InsertPhotoRounded';
 import PhotoIcon from '@mui/icons-material/Photo';
-import {addCategory,resetMutationResult,selectCategoryMutationResult,selectAllCategories} from '../../../redux/features/categorySlice';
+import {addBlog,resetMutationResult,selectBlogMutationResult,selectAllBlog} from '../../../redux/features/blogSlice';
 
-
+import JoditEditor from 'jodit-react';
 const AddNewCategory = () => {
     const dispatch=useDispatch();
-    const {loading,success}=useSelector(selectCategoryMutationResult);
+    const {loading,success}=useSelector(selectBlogMutationResult);
     const [title,setTitle]=useState('');
     const [description,setDescription]=useState('');
-    const [categoryStatus,setCategoryStatus]=useState('');
-
+    const [blogStatus,setBlogStatus]=useState('');
     const [Image,setImage]=useState('');
-    const [CategoryImg,setCategoryImg]=useState('');
-
+    const [BlogImg,setBlogImg]=useState('');
+    const editor = useRef(null);
+    const config = {
+      zIndex: 0,
+      readonly: false,
+      activeButtonsInReadOnly: ['source', 'fullsize', 'print', 'about'],
+      toolbarButtonSize: 'middle',
+      theme: 'default',
+      enableDragAndDropFileToEditor: true,
+      saveModeInCookie: false,
+      spellcheck: true,
+      editorCssClass: false,
+      triggerChangeEvent: true,
+      height: 500,
+      direction: 'ltr',
+      language: 'en',
+      debugLanguage: false,
+      i18n: 'en',
+      tabIndex: -1,
+      toolbar: true,
+      enter: 'P',
+      useSplitMode: false,
+      colorPickerDefaultTab: 'background',
+      imageDefaultWidth: 100,
+      disablePlugins: ['paste', 'stat'],
+      events: {},
+      textIcons: false,
+      uploader: {
+        insertImageAsBase64URI: true
+      },
+      placeholder: '',
+      showXPathInStatusbar: false
+    };
 
 
     const imageHandler=(e)=>{
-      if(e.target.name==='CategoryImg'){
-        setCategoryImg(e.target.files);
+      if(e.target.name==='BlogImg'){
+        setBlogImg(e.target.files);
         const reader=new FileReader();
         reader.onload=()=>{
           if(reader.readyState===2){
@@ -37,19 +67,19 @@ const AddNewCategory = () => {
 
     const handleSubmit=(e)=>{
         e.preventDefault();
-        if(CategoryImg===''){
+        if(BlogImg===''){
           toast.warn('Please select a image');
           return false;
         }
         const jsonData=new FormData();
         jsonData.append('title',title);
         jsonData.append('description',description);
-        jsonData.append('categoryStatus',categoryStatus);
-        Object.keys(CategoryImg).forEach(key=>{
-          jsonData.append(CategoryImg.item(key).name,CategoryImg.item(key));
+        jsonData.append('blogStatus',blogStatus);
+        Object.keys(BlogImg).forEach(key=>{
+          jsonData.append(BlogImg.item(key).name,BlogImg.item(key));
         })
 
-        dispatch(addCategory({jsonData,toast}));
+        dispatch(addBlog({jsonData,toast}));
     }
     useEffect(() => {
       
@@ -58,36 +88,15 @@ const AddNewCategory = () => {
         setTitle('');
         setDescription('');
         setImage('');
-        setCategoryImg('');
-        setCategoryStatus('');
+        setBlogImg('');
       }
     }, [success, dispatch]);
     
   return (
     <Box sx={{marginTop:2, display:'flex',flexDirection:'column',alignItems:'center'}}>
-        <Typography component='div' variant='h5'>Add new category</Typography>
+        <Typography component='div' variant='h5'>Add new blog</Typography>
         <Box component='form' onSubmit={handleSubmit}>
-              {/* <Grid container spacing={2} sx={{mt:'4px'}}>
-              <Grid item xs={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id='category'>Parent Category</InputLabel>
-                    <Select required
-                            labelId='parent_category'
-                            id='parent_category'
-                            value={parent_category}
-                            label='parent_category'
-                            onChange={(e=>setParent(e.target.value))}>
-                            <MenuItem value={"65680c1293b89e3dcbf1e29d"} >None</MenuItem>
-                            
-                            {categories && categories.map((cat)=>
-                              
-                              <MenuItem key={cat._id} value={cat._id}>{cat.title}</MenuItem>
-                              )
-                            }
-                    </Select>
-                  </FormControl>
-              </Grid>
-              </Grid> */}
+              
             <TextField type='text'
                         id='title'
                         label='Title'
@@ -99,17 +108,12 @@ const AddNewCategory = () => {
                         value={title}
                         onChange={(e=>setTitle(e.target.value))}
             />
-            <TextField type='text'
-                        id='description'
-                        label='Description'
-                        name='description'
-                        margin='normal'
-                        required
-                        fullWidth
-                        autoFocus
-                        value={description}
-                        onChange={(e=>setDescription(e.target.value))}
-            />
+                  <JoditEditor
+            ref={editor}
+            value={description}
+            config={config}
+            onChange={(newText)=>setDescription(newText)}
+          />
             <Grid container style={{alignItems:'center',margin:'10px 0'}}>
                 <Grid item xs>
                   <Box >
@@ -128,7 +132,7 @@ const AddNewCategory = () => {
                   >
                     <input type='file' 
                             hidden
-                            name='CategoryImg'
+                            name='BlogImg'
                             onChange={imageHandler}
                     />
                     Change Image
@@ -141,9 +145,10 @@ const AddNewCategory = () => {
                     <Select required
                             labelId='status'
                             id='status'
-                            value={categoryStatus}
+                            value={blogStatus}
                             label='status'
-                            onChange={(e=>setCategoryStatus(e.target.value))}> 
+                            onChange={(e=>setBlogStatus(e.target.value))}>
+
                                 <MenuItem value='pause'>Pause</MenuItem>
                                 <MenuItem value='active'>Active</MenuItem>
                     </Select>
